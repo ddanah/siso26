@@ -109,8 +109,7 @@ function setup() {
 function gotBodyPixResults(err, result) {
   if (err) return;
   segmentation = result;
-  // ★ 성능: mevius 필터일 때만 계속 세그멘테이션 실행
-  if (bodypix && currentState === 'mevius') bodypix.segment(video, gotBodyPixResults);
+  if (bodypix) bodypix.segment(video, gotBodyPixResults);
 }
 
 // =================================================================
@@ -154,12 +153,7 @@ function draw() {
       currentState = nextState; filterTimer = millis();
       if (currentState === 'IDLE') {
         esseParticles = []; dolphins = []; revealedCount = 0; isDetecting = false;
-        // ★ 성능: IDLE 복귀시 히스토리 프레임 메모리 정리
-        for (let f of historyFrames) { if (f && f.elt) f.remove(); }
         historyFrames = [];
-        // ★ 성능: mevius로 돌아갈 때 BodyPix 재개
-      } else if (currentState === 'mevius' && bodypix) {
-        bodypix.segment(video, gotBodyPixResults);
       }
     }
   } else if (transitionMode === 'OUT') {
@@ -340,7 +334,6 @@ function drawMeviusFilter() {
     img.mask(segmentation.backgroundMask);
     push(); translate(width, 0); scale(-1, 1);
     image(img, -s.offsetX, -s.offsetY, s.w, s.h); pop();
-    img.remove(); // ★ 성능: 즉시 메모리 해제
   }
   for (let sp of sparkles) sp.show();
   if (dolphins.length === 0) drawInstruction("가까이와서 입을 벌려보세요", 'sans-serif', color(255));
